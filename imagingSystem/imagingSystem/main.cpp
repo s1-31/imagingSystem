@@ -20,15 +20,17 @@ void main() {
 	Mat gray[2];
 	Mat result;
 
-	src[0] = imread("car1.jpg");
-	src[1] = imread("car2.jpg");
+	src[0] = imread("lena.jpg");
+	src[1] = imread("printed_lena.jpg");
+	
 	cv::cvtColor(src[0], gray[0], CV_BGR2GRAY);
 	cv::cvtColor(src[1], gray[1], CV_BGR2GRAY);
 
 	// gray ‰æ‘œ‚É‚·‚é
 	//gray[0].copyTo(src[0]);
 
-	cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create();
+	//cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create();
+	cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create();
 
 	vector<cv::KeyPoint> keypoints[2];
 	Mat descriptors[2];
@@ -62,7 +64,7 @@ void main() {
 
 
 	Mat homo = cv::findHomography(points1, points2, CV_RANSAC);
-	cv::warpPerspective(src[0], result, homo, Size(static_cast<int>(src[0].cols * 1.5), static_cast<int>(src[0].rows * 1.1)));
+	cv::warpPerspective(src[0], result, homo, Size(static_cast<int>(src[1].cols), static_cast<int>(src[1].rows)));
 	waitKey();
 	for (int y = 0; y < src[0].rows; y++) {
 		for (int x = 0; x < src[0].cols; x++) {
@@ -73,4 +75,22 @@ void main() {
 	imshow("result img", result);
 	waitKey(0);
 
+	Mat result2;
+
+	Mat homo2 = cv::findHomography(points2, points1, CV_RANSAC);
+	cv::warpPerspective(result, result2, homo2, Size(static_cast<int>(src[1].cols), static_cast<int>(src[1].rows)));
+
+	imshow("warped result", result2);
+	waitKey(0);
+
+	for (int y = 0; y < src[0].rows; y++) {
+		for (int x = 0; x < src[0].cols; x++) {
+			result2.at<Vec3b>(y, x) -= src[0].at<Vec3b>(y, x);
+		}
+	}
+
+	cv::Mat crop = result2(cv::Rect(0, 0, src[0].cols, src[0].rows));
+
+	imshow("substracttion", crop);
+	waitKey(0);
 }
