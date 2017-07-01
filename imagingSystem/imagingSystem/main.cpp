@@ -62,9 +62,11 @@ void main() {
 	Mat gray[2];
 	Mat result;
 
-	std::string origin_name = "653-origin.jpg";
-	std::string photo_name = "653-top-notes.jpg";
+	//std::string origin_name = "653-origin.jpg";
+	//std::string photo_name = "653-top-notes.jpg";
 
+	std::string origin_name = "lena.jpg";
+	std::string photo_name = "printed_lena.jpg";
 
 	// 結果保存用のフォルダとファイル
 	char out_dir[] = "";
@@ -81,8 +83,8 @@ void main() {
 	src[1] = imread(origin_name);
 	src[0] = imread(photo_name);
 
-	cv::resize(src[0], src[0], cv::Size(), 0.5, 0.5);
-	cv::resize(src[1], src[1], cv::Size(), 0.5, 0.5);
+	//cv::resize(src[0], src[0], cv::Size(), 0.5, 0.5);
+	//cv::resize(src[1], src[1], cv::Size(), 0.5, 0.5);
 	
 	//src[0] = imread("lena.jpg");
 	//src[1] = imread("printed_lena.jpg");
@@ -126,14 +128,14 @@ void main() {
 		Mat matchedImg;
 		drawMatches(src[0], keypoints[0], src[1], keypoints[1], matches, matchedImg);
 		imshow("draw img", matchedImg);
-		//waitKey(0);
+		waitKey(0);
 
 		Mat homo = cv::findHomography(points1, points2, CV_RANSAC);
 		cv::warpPerspective(src[0], result, homo, Size(static_cast<int>(src[1].cols), static_cast<int>(src[1].rows)));
 
 		imshow("result img", result);
 		cv::imwrite(std::string(out_dir) + "\\result" + std::to_string(j+1) + ".jpg", result);
-		//waitKey(0);
+		waitKey(0);
 
 		/*for (int y = 0; y < src[1].rows; y++) {
 		for (int x = 0; x < src[1].cols; x++) {
@@ -153,5 +155,14 @@ void main() {
 
 		src[0] = result;
 
+		double percent = 0.1;
+
+		src[0] = result(cv::Rect(static_cast<int>(result.cols*percent), 
+			static_cast<int>(result.rows*percent),
+			static_cast<int>(result.cols*(1.0-percent)), 
+			static_cast<int>(result.rows*(1.0-percent))));
+
+		imshow("result2 img", result);
+		waitKey(0);
 	}
 }
