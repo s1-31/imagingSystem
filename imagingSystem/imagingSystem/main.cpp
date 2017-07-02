@@ -158,6 +158,23 @@ void add_notes(cv::Mat original, cv::Mat notes, cv::Mat& withnotes) {
 	}
 }
 
+/*
+void unsharp_masking(cv::Mat src_mat, cv::Mat& dst_mat, float k) {
+	IplImage src = src_mat;
+	IplImage dst = dst_mat;
+	//カーネルの設定
+	float KernelData[] = {
+		-k / 9.0f, -k / 9.0f,           -k / 9.0f,
+		-k / 9.0f, 1 + (8 * k) / 9.0f,  -k / 9.0f,
+		-k / 9.0f, -k / 9.0f,           -k / 9.0f,
+	};
+	//カーネルの配列をCvMatへ変換
+	CvMat kernel = cvMat(3, 3, CV_32F, KernelData);
+	//フィルタ処理
+	cvFilter2D(&src, &dst, &kernel);
+}
+*/
+
 
 int main() {
 	std::cout << "Start.\n";
@@ -215,11 +232,14 @@ int main() {
 	convertImage(src[0], src[1], result);
 	Mat notes = result.clone();
 	extract_notes(result, notes);
+	//Mat sharp_notes = notes.clone();
+	//unsharp_masking(notes, sharp_notes, 1.5);
 	Mat withnotes = src[0].clone();
 	add_notes(src[0], notes, withnotes);
 
 	imshow("result img", result);
 	imshow("notes img", notes);
+	//imshow("sharp_notes img", sharp_notes);
 	imshow("withnotes img", withnotes);
 
 	cv::imwrite(std::string(out_dir) + "/" + "result.jpg", result);
