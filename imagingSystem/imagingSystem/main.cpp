@@ -1,4 +1,4 @@
-#include <opencv2/core/core.hpp>
+ï»¿#include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/opencv.hpp>
@@ -11,7 +11,7 @@
 #include <sstream>
 #include <fstream>
 
-double mean_squeare_error(cv::Mat origin, cv::Mat edited, int iterate_num, std::string out_dir) {
+double mean_squeare_error(cv::Mat origin, cv::Mat edited, std::string out_dir) {
 	cv::Mat gray_o, gray_e, gray16s_o, gray16s_e;
 	cv::cvtColor(origin, gray_o, CV_BGR2GRAY);
 	cv::cvtColor(edited, gray_e, CV_BGR2GRAY);
@@ -25,7 +25,7 @@ double mean_squeare_error(cv::Mat origin, cv::Mat edited, int iterate_num, std::
 	cv::Mat gray8u_o;
 	gray16s_o.convertTo(gray8u_o, CV_8U);
 	imshow("result img4", gray8u_o);
-	cv::imwrite(out_dir + "\\diff" + std::to_string(iterate_num+1) + ".jpg", gray8u_o);
+	cv::imwrite(out_dir + "\\diff" + ".jpg", gray8u_o);
 	//cv::waitKey(0);
 
 	edited = gray16s_o;
@@ -49,7 +49,71 @@ std::vector<std::string> split(const std::string &str, char sep)
 	return v;
 }
 
-void main() {
+void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& notes) {
+	std::cout << "detector.";
+	//cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create();
+	cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create();
+
+	std::cout << "keypoint.";
+	std::vector<cv::KeyPoint> original_keypoint;
+	cv::Mat original_descriptor;
+	detector->detect(original, original_keypoint);
+	detector->compute(original, original_keypoint, original_descriptor);
+
+	std::vector<cv::KeyPoint> withnotes_keypoint;
+	cv::Mat withnotes_descriptor;
+	detector->detect(withnotes, withnotes_keypoint);
+	detector->compute(withnotes, withnotes_keypoint, withnotes_descriptor);
+
+	std::cout << "match.";
+	std::vector<cv::DMatch> matches;
+
+	std::cout << "matcher.";
+	cv::BFMatcher matcher;
+	matcher.match(original_descriptor, withnotes_descriptor, matches);
+
+	std::cout << "points.";
+	std::vector<cv::Vec2f> original_points(matches.size());
+	std::vector<cv::Vec2f> withnotes_points(matches.size());
+
+	for (size_t i = 0; i < matches.size(); ++i)
+	{
+		
+		original_points[i][0] = original_keypoint[matches[i].queryIdx].pt.x;
+		original_points[i][1] = original_keypoint[matches[i].queryIdx].pt.y;
+
+		withnotes_points[i][0] = withnotes_keypoint[matches[i].trainIdx].pt.x;
+		withnotes_points[i][1] = withnotes_keypoint[matches[i].trainIdx].pt.y;
+	}
+
+	//Mat matchedImg;
+	//drawMatches(src[0], keypoints[0], src[1], keypoints[1], matches, matchedImg);
+	//imshow("draw img", matchedImg);
+	//waitKey(0);
+
+	std::cout << "homo.";
+	cv::Mat homo = cv::findHomography(original_points, withnotes_points, CV_RANSAC);
+
+	int width, height;
+	if (withnotes.cols < original.cols) {
+		width = static_cast<int>(withnotes.cols);
+		height = static_cast<int>(withnotes.rows);
+	}
+	else {
+		width = static_cast<int>(original.cols);
+		height = static_cast<int>(original.rows);
+	}
+
+	std::cout << "convert.";
+	cv::Mat withnotes_converted;
+	cv::warpPerspective(original, withnotes_converted, homo, cv::Size(width, height));
+
+	notes = withnotes_converted;
+	// return withnotes_converted;
+}
+
+int main() {
+	std::cout << "Start.\n";
 	using cv::imread;
 	using cv::Mat;
 	using std::vector;
@@ -62,120 +126,65 @@ void main() {
 	Mat gray[2];
 	Mat result;
 
-	std::string origin_name = "653-origin.jpg";
-	std::string photo_name = "653-top-notes.jpg";
+	std::string origin_name = "images/sample.jpg";
+	std::string photo_name = "images/sample_withnotes.jpg";
 
 	//std::string origin_name = "lena.jpg";
 	//std::string photo_name = "printed_lena.jpg";
 
-	// Œ‹‰Ê•Û‘¶—p‚ÌƒtƒHƒ‹ƒ_‚Æƒtƒ@ƒCƒ‹
-	char out_dir[] = "";
-	std::string out_file = "output.txt";
-	std::ofstream writing_file;
-
-	time_t now = time(NULL);
-	struct tm *pnow = localtime(&now);
-	sprintf(out_dir, "results\\%s%02d%02d%02d%02d", 
-		split(photo_name, '.')[0].c_str(), pnow->tm_mon + 1, pnow->tm_mday, pnow->tm_hour, pnow->tm_min);
+	// çµæžœä¿å­˜ç”¨ã®ãƒ•ã‚©ãƒ«ãƒ€ã¨ãƒ•ã‚¡ã‚¤ãƒ«
+	//char out_dir[] = "";
+	char out_dir[] = "test";
+	//time_t now = time(NULL);
+	//struct tm *pnow = localtime(&now);
+	//sprintf(out_dir, "results/%s%02d%02d%02d%02d",
+	//	split(photo_name, '.')[0].c_str(), pnow->tm_mon + 1, pnow->tm_mday, pnow->tm_hour, pnow->tm_min);
 	_mkdir(out_dir);
-	writing_file.open(std::string(out_dir)+"\\"+out_file, std::ios::out);
+
+	std::cout << std::string(out_dir) + "\n";
+
+	std::cout << "Start reading images.\n";
+
 
 	src[1] = imread(origin_name);
 	src[0] = imread(photo_name);
 
+	std::cout << "Finished resizing images.\n";
+	std::cout << "Start resizing images.\n";
+
+	// temporal countermeasure
 	cv::resize(src[0], src[0], cv::Size(), 0.5, 0.5);
 	cv::resize(src[1], src[1], cv::Size(), 0.5, 0.5);
-	
-	//src[0] = imread("lena.jpg");
-	//src[1] = imread("printed_lena.jpg");
 
-	int iter_num = 5;
+	std::cout << "Finished resizing images.\n";
+	std::cout << "Start converting images.\n";
 
-	for (int j = 0; j < iter_num; j++) {
-		cv::cvtColor(src[0], gray[0], CV_BGR2GRAY);
-		cv::cvtColor(src[1], gray[1], CV_BGR2GRAY);
+	cv::cvtColor(src[0], gray[0], CV_BGR2GRAY);
+	cv::cvtColor(src[1], gray[1], CV_BGR2GRAY);
 
-		// gray ‰æ‘œ‚É‚·‚é
-		//gray[0].copyTo(src[0]);
+	// gray ç”»åƒã«ã™ã‚‹
+	//gray[0].copyTo(src[0]);
 
-		//cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create();
-		cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create();
+	convertImage(src[0], src[1], result);
 
-		vector<cv::KeyPoint> keypoints[2];
-		Mat descriptors[2];
-		for (int i = 0; i < 2; i++) {
-			detector->detect(gray[i], keypoints[i]);
-			detector->compute(gray[i], keypoints[i], descriptors[i]);
-		}
+	imshow("result img", result);
+	std::cout << std::string(out_dir) + "/" + "converted.jpg";
+	cv::imwrite(std::string(out_dir) + "/" + "converted.jpg", result);
+	waitKey(0);
 
-		vector<cv::DMatch> matches;
-
-		cv::BFMatcher matcher;
-		matcher.match(descriptors[0], descriptors[1], matches);
-
-		vector<cv::Vec2f> points1(matches.size());
-		vector<cv::Vec2f> points2(matches.size());
-
-		for (size_t i = 0; i < matches.size(); ++i)
-		{
-			points1[i][0] = keypoints[0][matches[i].queryIdx].pt.x;
-			points1[i][1] = keypoints[0][matches[i].queryIdx].pt.y;
-
-			points2[i][0] = keypoints[1][matches[i].trainIdx].pt.x;
-			points2[i][1] = keypoints[1][matches[i].trainIdx].pt.y;
-		}
-
-		Mat matchedImg;
-		drawMatches(src[0], keypoints[0], src[1], keypoints[1], matches, matchedImg);
-		imshow("draw img", matchedImg);
-		//waitKey(0);
-
-		Mat homo = cv::findHomography(points1, points2, CV_RANSAC);
-		int width, height;
-		if (src[1].cols < src[0].cols) {
-			width = static_cast<int>(src[1].cols);
-			height = static_cast<int>(src[1].rows);
-		}
-		else {
-			width = static_cast<int>(src[0].cols);
-			height = static_cast<int>(src[0].rows);
-		}
-		cv::warpPerspective(src[0], result, homo, Size(width, height));
-
-		imshow("result img", result);
-		cv::imwrite(std::string(out_dir) + "\\result" + std::to_string(j+1) + ".jpg", result);
-		//waitKey(0);
-
-		/*for (int y = 0; y < src[1].rows; y++) {
-		for (int x = 0; x < src[1].cols; x++) {
-		cv::absdiff(result.at<Vec3b>(y, x), src[1].at<Vec3b>(y, x), result.at<Vec3b>(y, x));
-		}
-		}
-
-		cv::Mat crop = result(cv::Rect(0, 0, src[1].cols, src[1].rows));
-
-		imshow("substracttion", crop);
-		waitKey(0);*/
-
-		double mse = mean_squeare_error(src[1], result, j, std::string(out_dir));
-
-		std::cout << mse << std::endl;
-		writing_file << mse << std::endl;
-
-		src[0] = result;
-
-		double percent = 0.01;
-
-
-		src[0] = result(cv::Rect(static_cast<int>(result.cols*percent), 
-			static_cast<int>(result.rows*percent),
-			static_cast<int>(result.cols*(1.0-2*percent)), 
-			static_cast<int>(result.rows*(1.0-2*percent))));
-
-		src[1] = src[1](cv::Rect(static_cast<int>(result.cols*percent),
-			static_cast<int>(result.rows*percent),
-			static_cast<int>(result.cols*(1.0 - 2*percent)),
-			static_cast<int>(result.rows*(1.0 - 2*percent))));
-
+	/*
+	for (int y = 0; y < src[1].rows; y++) {
+	for (int x = 0; x < src[1].cols; x++) {
+	cv::absdiff(result.at<Vec3b>(y, x), src[1].at<Vec3b>(y, x), result.at<Vec3b>(y, x));
 	}
+	}
+
+	cv::Mat crop = result(cv::Rect(0, 0, src[1].cols, src[1].rows));
+
+	imshow("substracttion", crop);
+	waitKey(0);
+	*/
+
+	std::cout << "Finished resizing images.\n";
+	return 0;
 }
