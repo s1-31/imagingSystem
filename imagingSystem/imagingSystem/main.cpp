@@ -106,13 +106,15 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 }
 
 bool pixel_based_std(int r, int b, int g) {
+	double threshold = 0.03;
+
 	double db = b / 255.0;
 	double dg = g / 255.0;
 	double dr = r / 255.0;
 
 	double m = (dr + dg + db) / 3.0;
 	double std = ((db - m)*(db - m) + (dg - m)*(dg - m) + (dr - m)*(dr - m)) / m;
-	if (std > 0.03 && dr > dg && dr > db) {
+	if (std > threshold && dr > dg && dr > db) {
 		return true;
 	}
 	return false;
