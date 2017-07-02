@@ -49,7 +49,7 @@ std::vector<std::string> split(const std::string &str, char sep)
 	return v;
 }
 
-void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& notes) {
+void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& converted) {
 	std::cout << "detector.";
 	//cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create();
 	cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create();
@@ -92,25 +92,69 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& note
 	//waitKey(0);
 
 	std::cout << "homo.";
-	cv::Mat homo = cv::findHomography(original_points, withnotes_points, CV_RANSAC);
+	cv::Mat homo = cv::findHomography(withnotes_points, original_points, CV_RANSAC);
 
 	int width, height;
-	if (withnotes.cols < original.cols) {
-		width = static_cast<int>(withnotes.cols);
-		height = static_cast<int>(withnotes.rows);
-	}
-	else {
-		width = static_cast<int>(original.cols);
-		height = static_cast<int>(original.rows);
-	}
+	width = static_cast<int>(original.cols);
+	height = static_cast<int>(original.rows);
 
 	std::cout << "convert.";
 	cv::Mat withnotes_converted;
-	cv::warpPerspective(original, withnotes_converted, homo, cv::Size(width, height));
+	cv::warpPerspective(withnotes, withnotes_converted, homo, cv::Size(width, height));
 
-	notes = withnotes_converted;
-	// return withnotes_converted;
+	converted = withnotes_converted;
 }
+
+bool pixel_based_std(int r, int b, int g) {
+	double db = b / 255.0;
+	double dg = g / 255.0;
+	double dr = r / 255.0;
+
+	double m = (dr + dg + db) / 3.0;
+	double std = ((db - m)*(db - m) + (dg - m)*(dg - m) + (dr - m)*(dr - m)) / m;
+	if (std > 0.03 && dr > dg && dr > db) {
+		return true;
+	}
+	return false;
+}
+
+bool isred(cv::Vec3b pixel) {
+	int b = pixel(0);
+	int g= pixel(1);
+	int r= pixel(2);
+
+	return pixel_based_std(r, g, b);
+}
+
+void extract_notes(cv::Mat image, cv::Mat& notes) {
+	std::cout << "Start Extracting notes.";
+	for (int y = 0; y < image.rows; y++) {
+		for (int x = 0; x < image.cols; x++) {
+			if (isred(image.at<cv::Vec3b>(y, x))) {
+				notes.at<cv::Vec3b>(y, x) = image.at<cv::Vec3b>(y, x);
+			}
+			else {
+				// notes.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255);
+				notes.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 0);
+			}
+		}
+	}
+}
+
+void add_notes(cv::Mat original, cv::Mat notes, cv::Mat& withnotes) {
+	for (int y = 0; y < withnotes.rows; y++) {
+		for (int x = 0; x < withnotes.cols; x++) {
+			// cv::add(original.at<cv::Vec3b>(y, x), notes.at<cv::Vec3b>(y, x), withnotes.at<cv::Vec3b>(y, x));
+			if (notes.at<cv::Vec3b>(y, x)(2) > 0) {
+				withnotes.at<cv::Vec3b>(y, x) = notes.at<cv::Vec3b>(y, x);
+			}
+			else {
+				withnotes.at<cv::Vec3b>(y, x) = original.at<cv::Vec3b>(y, x);
+			}
+		}
+	}
+}
+
 
 int main() {
 	std::cout << "Start.\n";
@@ -124,7 +168,6 @@ int main() {
 
 	Mat src[2];
 	Mat gray[2];
-	Mat result;
 
 	std::string origin_name = "images/sample.jpg";
 	std::string photo_name = "images/sample_withnotes.jpg";
@@ -146,8 +189,8 @@ int main() {
 	std::cout << "Start reading images.\n";
 
 
-	src[1] = imread(origin_name);
-	src[0] = imread(photo_name);
+	src[0] = imread(origin_name);
+	src[1] = imread(photo_name);
 
 	std::cout << "Finished resizing images.\n";
 	std::cout << "Start resizing images.\n";
@@ -165,25 +208,21 @@ int main() {
 	// gray 画像にする
 	//gray[0].copyTo(src[0]);
 
+	Mat result;
 	convertImage(src[0], src[1], result);
+	Mat notes = result.clone();
+	extract_notes(result, notes);
+	Mat withnotes = src[0].clone();
+	add_notes(src[0], notes, withnotes);
 
 	imshow("result img", result);
-	std::cout << std::string(out_dir) + "/" + "converted.jpg";
-	cv::imwrite(std::string(out_dir) + "/" + "converted.jpg", result);
+	imshow("notes img", notes);
+	imshow("withnotes img", withnotes);
+
+	cv::imwrite(std::string(out_dir) + "/" + "result.jpg", result);
+	cv::imwrite(std::string(out_dir) + "/" + "notes.jpg", notes);
+	cv::imwrite(std::string(out_dir) + "/" + "withnotes.jpg", withnotes);
 	waitKey(0);
-
-	/*
-	for (int y = 0; y < src[1].rows; y++) {
-	for (int x = 0; x < src[1].cols; x++) {
-	cv::absdiff(result.at<Vec3b>(y, x), src[1].at<Vec3b>(y, x), result.at<Vec3b>(y, x));
-	}
-	}
-
-	cv::Mat crop = result(cv::Rect(0, 0, src[1].cols, src[1].rows));
-
-	imshow("substracttion", crop);
-	waitKey(0);
-	*/
 
 	std::cout << "Finished resizing images.\n";
 	return 0;
