@@ -106,7 +106,8 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 }
 
 bool pixel_based_std(int r, int b, int g) {
-	double threshold = 0.03;
+	double threshold = 0.02;
+	double vlth = 0.1;
 
 	double db = b / 255.0;
 	double dg = g / 255.0;
@@ -114,7 +115,7 @@ bool pixel_based_std(int r, int b, int g) {
 
 	double m = (dr + dg + db) / 3.0;
 	double std = ((db - m)*(db - m) + (dg - m)*(dg - m) + (dr - m)*(dr - m)) / m;
-	if (std > threshold && dr > dg && dr > db) {
+	if (std > threshold && dr > dg && dr > db && sqrt(std*m) > vlth) {
 		return true;
 	}
 	return false;
@@ -136,8 +137,8 @@ void extract_notes(cv::Mat image, cv::Mat& notes) {
 				notes.at<cv::Vec3b>(y, x) = image.at<cv::Vec3b>(y, x);
 			}
 			else {
-				// notes.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255);
-				notes.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 0);
+				notes.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255);
+				// notes.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 0);
 			}
 		}
 	}
@@ -147,7 +148,7 @@ void add_notes(cv::Mat original, cv::Mat notes, cv::Mat& withnotes) {
 	for (int y = 0; y < withnotes.rows; y++) {
 		for (int x = 0; x < withnotes.cols; x++) {
 			// cv::add(original.at<cv::Vec3b>(y, x), notes.at<cv::Vec3b>(y, x), withnotes.at<cv::Vec3b>(y, x));
-			if (notes.at<cv::Vec3b>(y, x)(2) > 0) {
+			if (notes.at<cv::Vec3b>(y, x)(0) < 255) {
 				withnotes.at<cv::Vec3b>(y, x) = notes.at<cv::Vec3b>(y, x);
 			}
 			else {
