@@ -171,8 +171,11 @@ int main() {
 	Mat src[2];
 	Mat gray[2];
 
-	std::string origin_name = "images/sample.jpg";
-	std::string photo_name = "images/sample_withnotes.jpg";
+	//std::string origin_name = "images/sample.jpg";
+	//std::string photo_name = "images/sample_withnotes.jpg";
+
+	std::string origin_name = "images/656-origin.jpg";
+	std::string photo_name = "images/656-top-notes.jpg";
 
 	//std::string origin_name = "lena.jpg";
 	//std::string photo_name = "printed_lena.jpg";
