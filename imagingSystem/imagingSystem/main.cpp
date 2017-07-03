@@ -66,6 +66,8 @@ int main() {
 
 	std::string origin_name = "images/sample.jpg";
 	std::string photo_name = "images/sample_withnotes.jpg";
+	//std::string origin_name = "images/656-origin.jpg";
+	//std::string photo_name = "images/656-top-notes.jpg";
 
 	//std::string origin_name = "lena.jpg";
 	//std::string photo_name = "printed_lena.jpg";
@@ -80,7 +82,7 @@ int main() {
 	_mkdir(out_dir);
 
 	std::cout << std::string(out_dir) + "\n";
-	//std::cout << "Start reading images.\n";
+	std::cout << "Start reading images.\n";
 
 	src[0] = imread(origin_name);
 	src[1] = imread(photo_name);
