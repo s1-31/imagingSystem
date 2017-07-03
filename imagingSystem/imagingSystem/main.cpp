@@ -51,7 +51,6 @@ std::vector<std::string> split(const std::string &str, char sep)
 	return v;
 }
 
-
 int main() {
 	std::cout << "Start.\n";
 	using cv::imread;
@@ -81,9 +80,7 @@ int main() {
 	_mkdir(out_dir);
 
 	std::cout << std::string(out_dir) + "\n";
-
-	std::cout << "Start reading images.\n";
-
+	//std::cout << "Start reading images.\n";
 
 	src[0] = imread(origin_name);
 	src[1] = imread(photo_name);
