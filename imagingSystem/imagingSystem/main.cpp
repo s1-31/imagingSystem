@@ -10,6 +10,7 @@
 #include <direct.h>
 #include <sstream>
 #include <fstream>
+#include <time.h>
 
 #include "convert.h"
 

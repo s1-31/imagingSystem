@@ -12,6 +12,7 @@
 #include <direct.h>
 #include <sstream>
 #include <fstream>
+#include <chrono>
 
 #include "isred.h"
 #include "filter.h"
@@ -21,11 +22,12 @@ void extract_notes(cv::Mat, cv::Mat&);
 void add_notes(cv::Mat, cv::Mat, cv::Mat&);
 
 void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& converted) {
-	std::cout << "detector.";
+	std::cout << "detector." << std::endl;
 	//cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create();
 	cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create();
 
-	std::cout << "keypoint.";
+	auto time1 = std::chrono::system_clock::now();
+	std::cout << "keypoint." << std::endl;
 	std::vector<cv::KeyPoint> original_keypoint;
 	cv::Mat original_descriptor;
 	detector->detect(original, original_keypoint);
@@ -36,14 +38,18 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 	detector->detect(withnotes, withnotes_keypoint);
 	detector->compute(withnotes, withnotes_keypoint, withnotes_descriptor);
 
-	std::cout << "match.";
-	std::vector<cv::DMatch> matches;
+	auto time2 = std::chrono::system_clock::now();
+	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count() << "msec" << std::endl;
 
-	std::cout << "matcher.";
+	std::cout << "match." << std::endl;
+	std::vector<cv::DMatch> matches;
 	cv::BFMatcher matcher;
 	matcher.match(original_descriptor, withnotes_descriptor, matches);
 
-	std::cout << "points.";
+	auto time3 = std::chrono::system_clock::now();
+	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count() << "msec" << std::endl;
+
+	std::cout << "points." << std::endl;
 	std::vector<cv::Vec2f> original_points(matches.size());
 	std::vector<cv::Vec2f> withnotes_points(matches.size());
 
@@ -56,6 +62,8 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 		withnotes_points[i][0] = withnotes_keypoint[matches[i].trainIdx].pt.x;
 		withnotes_points[i][1] = withnotes_keypoint[matches[i].trainIdx].pt.y;
 	}
+	auto time4 = std::chrono::system_clock::now();
+	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count() << "msec" << std::endl;
 
 	//Mat matchedImg;
 	//drawMatches(src[0], keypoints[0], src[1], keypoints[1], matches, matchedImg);
@@ -69,9 +77,12 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 	width = static_cast<int>(original.cols);
 	height = static_cast<int>(original.rows);
 
-	std::cout << "convert.";
+	std::cout << "convert." << std::endl;
 	cv::Mat withnotes_converted;
 	cv::warpPerspective(withnotes, withnotes_converted, homo, cv::Size(width, height));
+
+	auto time5 = std::chrono::system_clock::now();
+	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count() << "msec" << std::endl;
 
 	converted = withnotes_converted;
 }
