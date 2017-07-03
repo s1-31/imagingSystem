@@ -105,7 +105,7 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 	converted = withnotes_converted;
 }
 
-bool pixel_based_std(int r, int b, int g) {
+bool pixel_based_std(int r, int g, int b) {
 	double threshold = 0.03;
 
 	double db = b / 255.0;
