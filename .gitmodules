@@ -1,3 +1,0 @@
-[submodule "imagingSystem/imagingSystem/submodule/cmdline"]
-	path = imagingSystem/imagingSystem/submodule/cmdline
-	url = https://github.com/tanakh/cmdline.git
