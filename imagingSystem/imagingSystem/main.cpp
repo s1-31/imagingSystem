@@ -63,7 +63,6 @@ int main() {
 	using cv::Vec3b;
 
 	Mat src[2];
-	Mat gray[2];
 
 	//std::string origin_name = "images/sample.jpg";
 	//std::string photo_name = "images/sample_withnotes.jpg";
@@ -92,21 +91,15 @@ int main() {
 	std::cout << "Finished resizing images.\n";
 	std::cout << "Start resizing images.\n";
 
-	// temporal countermeasure
-	cv::resize(src[0], src[0], cv::Size(), 0.5, 0.5);
-	cv::resize(src[1], src[1], cv::Size(), 0.5, 0.5);
-
 	std::cout << "Finished resizing images.\n";
 	std::cout << "Start converting images.\n";
-
-	cv::cvtColor(src[0], gray[0], CV_BGR2GRAY);
-	cv::cvtColor(src[1], gray[1], CV_BGR2GRAY);
 
 	// gray 画像にする
 	//gray[0].copyTo(src[0]);
 
 	Mat result;
-	convertImage(src[0], src[1], result);
+	float reduction_rate = 0.5;
+	convertImage(src[0], src[1], result, reduction_rate);
 	Mat notes = result.clone();
 	extract_notes(result, notes);
 	Mat withnotes = src[0].clone();

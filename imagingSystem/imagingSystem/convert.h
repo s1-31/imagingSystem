@@ -17,11 +17,17 @@
 #include "isred.h"
 #include "filter.h"
 
-void convertImage(const cv::Mat, const cv::Mat, cv::Mat&);
+void convertImage(const cv::Mat, const cv::Mat, cv::Mat&, float);
 void extract_notes(cv::Mat, cv::Mat&);
 void add_notes(cv::Mat, cv::Mat, cv::Mat&);
 
-void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& converted) {
+
+void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& converted, float reduction_rate) {
+	cv::Mat small_original, small_withnotes;
+	// temporal countermeasure
+	cv::resize(original, small_original, cv::Size(), reduction_rate, reduction_rate);
+	cv::resize(withnotes, small_withnotes, cv::Size(), reduction_rate, reduction_rate);
+
 	std::cout << "detector." << std::endl;
 	//cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create();
 	cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create();
@@ -30,13 +36,13 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 	std::cout << "keypoint." << std::endl;
 	std::vector<cv::KeyPoint> original_keypoint;
 	cv::Mat original_descriptor;
-	detector->detect(original, original_keypoint);
-	detector->compute(original, original_keypoint, original_descriptor);
+	detector->detect(small_original, original_keypoint);
+	detector->compute(small_original, original_keypoint, original_descriptor);
 
 	std::vector<cv::KeyPoint> withnotes_keypoint;
 	cv::Mat withnotes_descriptor;
-	detector->detect(withnotes, withnotes_keypoint);
-	detector->compute(withnotes, withnotes_keypoint, withnotes_descriptor);
+	detector->detect(small_withnotes, withnotes_keypoint);
+	detector->compute(small_withnotes, withnotes_keypoint, withnotes_descriptor);
 
 	auto time2 = std::chrono::system_clock::now();
 	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count() << "msec" << std::endl;
@@ -55,20 +61,14 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 
 	for (size_t i = 0; i < matches.size(); ++i)
 	{
+		original_points[i][0] = original_keypoint[matches[i].queryIdx].pt.x / reduction_rate;
+		original_points[i][1] = original_keypoint[matches[i].queryIdx].pt.y / reduction_rate;
 
-		original_points[i][0] = original_keypoint[matches[i].queryIdx].pt.x;
-		original_points[i][1] = original_keypoint[matches[i].queryIdx].pt.y;
-
-		withnotes_points[i][0] = withnotes_keypoint[matches[i].trainIdx].pt.x;
-		withnotes_points[i][1] = withnotes_keypoint[matches[i].trainIdx].pt.y;
+		withnotes_points[i][0] = withnotes_keypoint[matches[i].trainIdx].pt.x / reduction_rate;
+		withnotes_points[i][1] = withnotes_keypoint[matches[i].trainIdx].pt.y / reduction_rate;
 	}
 	auto time4 = std::chrono::system_clock::now();
 	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count() << "msec" << std::endl;
-
-	//Mat matchedImg;
-	//drawMatches(src[0], keypoints[0], src[1], keypoints[1], matches, matchedImg);
-	//imshow("draw img", matchedImg);
-	//waitKey(0);
 
 	std::cout << "homo.";
 	cv::Mat homo = cv::findHomography(withnotes_points, original_points, CV_RANSAC);
