@@ -16,7 +16,7 @@
 void calc_global_statistics(cv::Mat, double*, double*);
 int channel_based_sigmoid(int);
 void unsharp_masking(cv::Mat, cv::Mat&, float);
-
+void removeShadow(cv::Mat&);
 
 void calc_global_statistics(cv::Mat image, double* m, double* std) {
 	for (int i = 0; i < 3; i++) {
@@ -56,4 +56,23 @@ void unsharp_masking(cv::Mat src_mat, cv::Mat& dst_mat, float k) {
 	CvMat kernel = cvMat(3, 3, CV_32F, KernelData);
 	//フィルタ処理
 	cvFilter2D(&src, &dst, &kernel);
+}
+
+void removeShadow(cv::Mat& img) {
+	cv::Mat gray, adaptive;
+	cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+	cv::adaptiveThreshold(gray, adaptive, 255,
+		cv::AdaptiveThresholdTypes::ADAPTIVE_THRESH_GAUSSIAN_C,
+		cv::ThresholdTypes::THRESH_BINARY,
+		9, 12);
+	//cv::Mat kernel = cv::Mat::ones(3, 3, CV_8U);
+	//cv::morphologyEx(adaptive, adaptive, cv::MorphTypes::MORPH_CLOSE, kernel);
+	//cv::morphologyEx(adaptive, adaptive, cv::MorphTypes::MORPH_OPEN, kernel);
+	for (int y = 0; y < img.rows; y++) {
+		for (int x = 0; x < img.cols; x++) {
+			if (adaptive.at<uchar>(y, x) == 255) {
+				img.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255);
+			}
+		}
+	}
 }

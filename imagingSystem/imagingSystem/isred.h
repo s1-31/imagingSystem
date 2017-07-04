@@ -57,7 +57,8 @@ bool isred(cv::Vec3b pixel) {
 	int g = pixel(1);
 	int r = pixel(2);
 
-	return isred_based_pstd(r, g, b);
+	//return isred_based_pstd(r, g, b);
+	return isred_basedon_edges(r, g, b);
 }
 
 bool isred(cv::Vec3b pixel, double* gm, double* gstd) {
@@ -71,16 +72,14 @@ bool isred(cv::Vec3b pixel, double* gm, double* gstd) {
 
 bool isred_basedon_edges(int r, int g, int b) {
 
-	double threshold = 0.02;
-	double vlth = 0.1;
+	double threshold = 0.2;
 
 	double rg = (r-g) / 255.0;
 	double gb = (g-b) / 255.0;
 	double br = (b-r) / 255.0;
 
-	double m = (rg + gb + br) / 3.0;
-	double norm_std = sqrt((rg - m)*(rg - m) + (gb - m)*(gb - m) + (br - m)*(br - m)) / m;
-	if (norm_std > threshold && rg > 0 && br < 0 && (norm_std*m) > vlth) {
+	double norm_std = sqrt(rg*rg + gb*gb + br*br);
+	if (norm_std > threshold && rg > 0 && br < 0) {
 		return true;
 	}
 	return false;

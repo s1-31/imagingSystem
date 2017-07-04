@@ -76,18 +76,14 @@ int main(int argc, char *argv[]) {
 	std::string origin_file_name = split(origin_name, '/').back();
 	std::string out_name = parser.get<std::string>("output") == "" ? split(origin_file_name, '.')[0] + "-withnotes.jpg" : parser.get<std::string>("output");
 
+	std::cout << out_dir << std::endl;
 	std::cout << out_name << std::endl;
 
 	Mat src[2];
+	std::cout << "Start reading images.\n";
 
 	src[0] = imread(origin_name);
 	src[1] = imread(photo_name);
-
-	std::cout << "Finished resizing images.\n";
-	std::cout << "Start resizing images.\n";
-
-	std::cout << "Finished resizing images.\n";
-	std::cout << "Start converting images.\n";
 
 	// gray 画像にする
 	//gray[0].copyTo(src[0]);
@@ -95,6 +91,7 @@ int main(int argc, char *argv[]) {
 	Mat warped;
 	float reduction_rate = 0.5;
 	convertImage(src[0], src[1], warped, reduction_rate);
+	removeShadow(warped);
 	Mat notes = warped.clone();
 	extract_notes(warped, notes);
 	Mat withnotes = src[0].clone();
