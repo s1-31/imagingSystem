@@ -11,6 +11,7 @@
 #include <sstream>
 #include <fstream>
 
+#include "cmdline.h"
 #include "convert.h"
 
 double mean_squeare_error(cv::Mat origin, cv::Mat edited, std::string out_dir) {
@@ -51,7 +52,7 @@ std::vector<std::string> split(const std::string &str, char sep)
 	return v;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
 	std::cout << "Start.\n";
 	using cv::imread;
 	using cv::Mat;
@@ -61,28 +62,23 @@ int main() {
 	using cv::Size;
 	using cv::Vec3b;
 
+
+	cmdline::parser parser;
+	parser.add<std::string>("input", 'i', "original input image", true, "");
+	parser.add<std::string>("withnotes", 'w', "photo with notes", true, "");
+	parser.add<std::string>("outdir", 'd', "output directory path", false, "test");
+	parser.add<std::string>("output", 'o', "output file name", false, "");
+	parser.parse_check(argc, argv);
+
+	std::string origin_name = parser.get<std::string>("input");
+	std::string photo_name = parser.get<std::string>("withnotes");
+	std::string out_dir = parser.get<std::string>("outdir");
+	std::string origin_file_name = split(origin_name, '/').back();
+	std::string out_name = parser.get<std::string>("output") == "" ? split(origin_file_name, '.')[0] + "-withnotes.jpg" : parser.get<std::string>("output");
+
+	std::cout << out_name << std::endl;
+
 	Mat src[2];
-	Mat gray[2];
-
-	std::string origin_name = "images/sample.jpg";
-	std::string photo_name = "images/sample_withnotes.jpg";
-	//std::string origin_name = "images/656-origin.jpg";
-	//std::string photo_name = "images/656-top-notes.jpg";
-
-	//std::string origin_name = "lena.jpg";
-	//std::string photo_name = "printed_lena.jpg";
-
-	// 結果保存用のフォルダとファイル
-	//char out_dir[] = "";
-	char out_dir[] = "test";
-	//time_t now = time(NULL);
-	//struct tm *pnow = localtime(&now);
-	//sprintf(out_dir, "results/%s%02d%02d%02d%02d",
-	//	split(photo_name, '.')[0].c_str(), pnow->tm_mon + 1, pnow->tm_mday, pnow->tm_hour, pnow->tm_min);
-	_mkdir(out_dir);
-
-	std::cout << std::string(out_dir) + "\n";
-	std::cout << "Start reading images.\n";
 
 	src[0] = imread(origin_name);
 	src[1] = imread(photo_name);
@@ -90,35 +86,29 @@ int main() {
 	std::cout << "Finished resizing images.\n";
 	std::cout << "Start resizing images.\n";
 
-	// temporal countermeasure
-	cv::resize(src[0], src[0], cv::Size(), 0.5, 0.5);
-	cv::resize(src[1], src[1], cv::Size(), 0.5, 0.5);
-
 	std::cout << "Finished resizing images.\n";
 	std::cout << "Start converting images.\n";
-
-	cv::cvtColor(src[0], gray[0], CV_BGR2GRAY);
-	cv::cvtColor(src[1], gray[1], CV_BGR2GRAY);
 
 	// gray 画像にする
 	//gray[0].copyTo(src[0]);
 
-	Mat result;
-	convertImage(src[0], src[1], result);
-	Mat notes = result.clone();
-	extract_notes(result, notes);
+	Mat warped;
+	float reduction_rate = 0.5;
+	convertImage(src[0], src[1], warped, reduction_rate);
+	Mat notes = warped.clone();
+	extract_notes(warped, notes);
 	Mat withnotes = src[0].clone();
 	add_notes(src[0], notes, withnotes);
 
-	imshow("result img", result);
+	imshow("warped img", warped);
 	imshow("notes img", notes);
 	imshow("withnotes img", withnotes);
 
-	cv::imwrite(std::string(out_dir) + "/" + "result.jpg", result);
-	cv::imwrite(std::string(out_dir) + "/" + "notes.jpg", notes);
-	cv::imwrite(std::string(out_dir) + "/" + "withnotes.jpg", withnotes);
+	_mkdir(out_dir.c_str());
+	cv::imwrite(out_dir + "/" + split(origin_file_name, '.')[0] + "-warped.jpg", warped);
+	cv::imwrite(out_dir + "/" + split(origin_file_name, '.')[0] + "-notes.jpg", notes);
+	cv::imwrite(out_dir + "/" + out_name, withnotes);
 	waitKey(0);
 
-	std::cout << "Finished resizing images.\n";
 	return 0;
 }
