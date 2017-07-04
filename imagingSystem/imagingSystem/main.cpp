@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 	Mat warped;
 	float reduction_rate = 0.5;
 	convertImage(src[0], src[1], warped, reduction_rate);
-	removeShadow(warped);
+	//removeShadow(warped);
 	Mat notes = warped.clone();
 	extract_notes(warped, notes);
 	Mat withnotes = src[0].clone();
