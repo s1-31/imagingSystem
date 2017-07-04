@@ -14,6 +14,7 @@
 #include <fstream>
 
 void calc_global_statistics(cv::Mat, double*, double*);
+void calc_global_edges_statistics(cv::Mat, double*, double*);
 int channel_based_sigmoid(int);
 void unsharp_masking(cv::Mat, cv::Mat&, float);
 
@@ -30,6 +31,31 @@ void calc_global_statistics(cv::Mat image, double* m, double* std) {
 				m[i] += static_cast<double>(p(i));
 				std[i] += static_cast<double>(p(i))*static_cast<double>(p(i));
 			}
+		}
+	}
+	for (int i = 0; i < 3; i++) {
+		m[i] = m[i] / (image.rows*image.cols);
+		std[i] = sqrt(std[i] / (image.rows*image.cols) - m[i] * m[i]);
+	}
+}
+
+void calc_global_edges_statistics(cv::Mat image, double* m, double* std) {
+	for (int i = 0; i < 3; i++) {
+		m[i] = 0.0;
+		std[i] = 0.0;
+	}
+	for (int y = 0; y < image.rows; y++) {
+		for (int x = 0; x < image.cols; x++) {
+			cv::Vec3b p = image.at<cv::Vec3b>(y, x);
+			int b = p(0);
+			int g = p(1);
+			int r = p(2);
+			m[0] += (r - g) / 255.0;
+			m[1] += (g - b) / 255.0;
+			m[2] += (b - r) / 255.0;
+			std[0] += (r - g)*(r - g) / (255.0 * 255.0);
+			std[1] += (g - b)*(g - b) / (255.0 * 255.0);
+			std[2] += (b - r)*(b - r) / (255.0 * 255.0);
 		}
 	}
 	for (int i = 0; i < 3; i++) {

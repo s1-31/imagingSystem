@@ -21,9 +21,10 @@ bool isred_basedon_pstd(int, int, int);
 bool isred(cv::Vec3b);
 bool isred(cv::Vec3b, double*, double*);
 bool isred_basedon_edges(int, int, int);
+bool isred_basedon_edges(int*, double*, double*);
 
 
-bool isred_based_pstd(int r, int b, int g) {
+bool isred_basedon_pstd(int r, int b, int g) {
 	double threshold = 0.02;
 	double vlth = 0.1;
 
@@ -39,7 +40,7 @@ bool isred_based_pstd(int r, int b, int g) {
 	return false;
 }
 
-bool isred_based_global_std(int* p, double* gm, double* gstd) {
+bool isred_basedon_global_std(int* p, double* gm, double* gstd) {
 	double threshold = 0.3*0.3*0.3;
 	double score = 1.0;
 	for (int i = 0; i < 3; i++) {
@@ -65,9 +66,10 @@ bool isred(cv::Vec3b pixel, double* gm, double* gstd) {
 	int b = pixel(0);
 	int g = pixel(1);
 	int r = pixel(2);
-	int p[] = { b, g, r };
+	int p[] = { r, g, b };
 
-	return isred_based_global_std(p, gm, gstd);
+	//return isred_based_global_std(p, gm, gstd);
+	return isred_basedon_edges(p, gm, gstd);
 }
 
 bool isred_basedon_edges(int r, int g, int b) {
@@ -79,7 +81,26 @@ bool isred_basedon_edges(int r, int g, int b) {
 	double br = (b-r) / 255.0;
 
 	double norm_std = sqrt(rg*rg + gb*gb + br*br);
-	if (norm_std > threshold && rg > 0 && br < 0) {
+	if (norm_std > threshold) {
+		return true;
+	}
+	return false;
+}
+
+bool isred_basedon_edges(int* p, double* gm, double* gstd) {
+	//double threshold = 4.5;
+	double threshold = 10.0;
+
+	double rg = (p[0] - p[1]) / 255.0;
+	double gb = (p[1] - p[2]) / 255.0;
+	double br = (p[2] - p[0]) / 255.0;
+
+	double norm_rg = (rg - gm[0]) / gstd[0];
+	double norm_gb = (gb - gm[1]) / gstd[1];
+	double norm_br = (br - gm[2]) / gstd[2];
+
+	//if (fabs(norm_rg) > threshold || fabs(norm_gb) > threshold || fabs(norm_br) > threshold) {
+	if (sqrt(norm_rg*norm_rg + norm_gb*norm_gb + norm_br*norm_br) > threshold) {
 		return true;
 	}
 	return false;

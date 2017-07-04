@@ -29,7 +29,6 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 	cv::resize(withnotes, small_withnotes, cv::Size(), reduction_rate, reduction_rate);
 
 	std::cout << "detector." << std::endl;
-	//cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create();
 	cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create();
 
 	auto time1 = std::chrono::system_clock::now();
@@ -89,41 +88,20 @@ void convertImage(const cv::Mat original, const cv::Mat withnotes, cv::Mat& conv
 
 void extract_notes(cv::Mat image, cv::Mat& notes) {
 	std::cout << "Start Extracting notes.";
-	//cv::Mat sharp_image = image.clone();
-	//unsharp_masking(image, sharp_image, 3);
-	//image = sharp_image;
-	double gm[] = { 0.0, 0.0, 0.0 };
-	double gstd[] = { 0.0, 0.0, 0.0 };
-	calc_global_statistics(image, gm, gstd);
-	std::cout << "\n", gm[0], gm[1], gm[2], "\n";
-	std::cout << "\n", gstd[0], gstd[1], gstd[2], "\n";
+	//double gm[] = { 0.0, 0.0, 0.0 };
+	//double gstd[] = { 0.0, 0.0, 0.0 };
+	//calc_global_edges_statistics(image, gm, gstd);
+	//std::cout << "\n" << gm[0] << "," << gm[1] << "," << gm[2] << "," << std::endl;
+	//std::cout << "\n" << gstd[0] << "," << gstd[1] << "," << gstd[2] << "," << std::endl;
 
 	for (int y = 0; y < image.rows; y++) {
 		for (int x = 0; x < image.cols; x++) {
-			if (isred(image.at<cv::Vec3b>(y, x))) {
 			//if (isred(image.at<cv::Vec3b>(y, x), gm, gstd)) {
-				//TODO: sigmoidかけるとか？
-				//赤いピクセルの統計情報が取れれば、もっとやりようはある。
+			if (isred(image.at<cv::Vec3b>(y, x))) {
 				notes.at<cv::Vec3b>(y, x) = image.at<cv::Vec3b>(y, x);
-				//notes.at<cv::Vec3b>(y, x) = cv::Vec3b(channel_based_sigmoid(b), channel_based_sigmoid(g), channel_based_sigmoid(r));
-				//notes.at<cv::Vec3b>(y, x) = cv::Vec3b(50, 50, 200);
-				/*
-				cv::Vec3b p = image.at<cv::Vec3b>(y, x);
-				int b = p(0);
-				int g = p(1);
-				int r = p(2);
-				cv::Vec3b filtered_p = cv::Vec3b(channel_based_sigmoid(b), channel_based_sigmoid(g), channel_based_sigmoid(r));
-				if (isred(filtered_p)) {
-				notes.at<cv::Vec3b>(y, x) = filtered_p;
-				}
-				else {
-				notes.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255);
-				}
-				*/
 			}
 			else {
 				notes.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255);
-				// notes.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 0);
 			}
 		}
 	}
@@ -132,7 +110,6 @@ void extract_notes(cv::Mat image, cv::Mat& notes) {
 void add_notes(cv::Mat original, cv::Mat notes, cv::Mat& withnotes) {
 	for (int y = 0; y < withnotes.rows; y++) {
 		for (int x = 0; x < withnotes.cols; x++) {
-			// cv::add(original.at<cv::Vec3b>(y, x), notes.at<cv::Vec3b>(y, x), withnotes.at<cv::Vec3b>(y, x));
 			if (isred(notes.at<cv::Vec3b>(y, x))) {
 				withnotes.at<cv::Vec3b>(y, x) = notes.at<cv::Vec3b>(y, x);
 			}
